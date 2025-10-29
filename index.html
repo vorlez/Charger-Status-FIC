@@ -192,11 +192,6 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-2px); }
         }
-        .loading {
-            text-align: center;
-            font-size: 18px;
-            margin: 50px;
-        }
         .error {
             color: #ff6b6b;
             text-align: center;
@@ -214,10 +209,9 @@
 </head>
 <body>
     <h1>FIC Chargers Status<br><small>Nils Foss Alle - Hillerød</small></h1>
-    <div id="loading" class="loading">Loading charger statuses...</div>
-    <div id="summary" class="summary-container" style="display: none;"></div>
-    <div id="chargers-blocks" class="chargers-blocks" style="display: none;"></div>
-    <div id="update-info" class="update-info" style="display: none;">Updated: Never</div>
+    <div id="summary" class="summary-container"></div>
+    <div id="chargers-blocks" class="chargers-blocks"></div>
+    <div id="update-info" class="update-info">Updated: Never</div>
 
     <script>
         const API_URL = "https://customerportalapi.clever.dk/api/v1/publicchargepoints";
@@ -229,8 +223,6 @@
         });
         const LOCATION_NAME = "Nils Foss Alle - Hillerød";
         const UPDATE_INTERVAL = 60000; // 1 minute
-
-        let isInitialLoad = true;
 
         function fetchData() {
             return fetch(`${API_URL}?${PARAMS}`, { headers: HEADERS })
@@ -356,60 +348,20 @@
         }
 
         function updateDisplay() {
-            const loading = document.getElementById("loading");
-            const summary = document.getElementById("summary");
-            const chargersBlocks = document.getElementById("chargers-blocks");
-            const updateInfo = document.getElementById("update-info");
-
-            if (isInitialLoad) {
-                loading.style.display = "block";
-                summary.style.display = "none";
-                chargersBlocks.style.display = "none";
-                updateInfo.style.display = "none";
-            } else {
-                let tempLoading = document.getElementById("temp-loading");
-                if (!tempLoading) {
-                    tempLoading = document.createElement("div");
-                    tempLoading.id = "temp-loading";
-                    tempLoading.className = "loading";
-                    tempLoading.textContent = "Updating charger statuses...";
-                    updateInfo.insertAdjacentElement("afterend", tempLoading);
-                }
-                tempLoading.style.display = "block";
-                loading.style.display = "none";
-            }
-
             fetchData()
                 .then(data => {
                     const counts = displayChargers(data);
                     updateSummary(counts);
-                    const tempLoading = document.getElementById("temp-loading");
-                    if (tempLoading) {
-                        tempLoading.remove();
-                    }
-                    loading.style.display = "none";
-                    if (isInitialLoad) {
-                        summary.style.display = "flex";
-                        chargersBlocks.style.display = "flex";
-                        updateInfo.style.display = "block";
-                        isInitialLoad = false;
-                    }
-                    updateInfo.textContent = `Updated: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+                    document.getElementById("summary").style.display = "flex";
+                    document.getElementById("chargers-blocks").style.display = "flex";
+                    document.getElementById("update-info").style.display = "block";
+                    document.getElementById("update-info").textContent = `Updated: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
                 })
                 .catch(error => {
-                    const tempLoading = document.getElementById("temp-loading");
-                    if (tempLoading) {
-                        tempLoading.remove();
-                    }
-                    loading.style.display = "none";
-                    chargersBlocks.innerHTML = `<p class="error">Error: ${error.message}</p>`;
-                    if (isInitialLoad) {
-                        chargersBlocks.style.display = "block";
-                    }
-                    updateInfo.textContent = `Error: ${error.message}`;
-                    if (isInitialLoad) {
-                        updateInfo.style.display = "block";
-                    }
+                    document.getElementById("chargers-blocks").innerHTML = `<p class="error">Error: ${error.message}</p>`;
+                    document.getElementById("chargers-blocks").style.display = "flex";
+                    document.getElementById("update-info").textContent = `Error: ${error.message}`;
+                    document.getElementById("update-info").style.display = "block";
                 });
         }
 
