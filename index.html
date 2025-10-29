@@ -186,11 +186,11 @@
             font-style: italic;
             color: #d3d3d3;
             font-size: 14px;
-            animation: pulse 2s infinite;
+            animation: float 2s infinite;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
         }
         .loading {
             text-align: center;
@@ -229,6 +229,8 @@
         });
         const LOCATION_NAME = "Nils Foss Alle - Hillerød";
         const UPDATE_INTERVAL = 60000; // 1 minute
+
+        let isInitialLoad = true;
 
         function fetchData() {
             return fetch(`${API_URL}?${PARAMS}`, { headers: HEADERS })
@@ -359,27 +361,55 @@
             const chargersBlocks = document.getElementById("chargers-blocks");
             const updateInfo = document.getElementById("update-info");
 
-            loading.style.display = "block";
-            summary.style.display = "none";
-            chargersBlocks.style.display = "none";
-            updateInfo.style.display = "none";
+            if (isInitialLoad) {
+                loading.style.display = "block";
+                summary.style.display = "none";
+                chargersBlocks.style.display = "none";
+                updateInfo.style.display = "none";
+            } else {
+                let tempLoading = document.getElementById("temp-loading");
+                if (!tempLoading) {
+                    tempLoading = document.createElement("div");
+                    tempLoading.id = "temp-loading";
+                    tempLoading.className = "loading";
+                    tempLoading.textContent = "Updating charger statuses...";
+                    updateInfo.insertAdjacentElement("afterend", tempLoading);
+                }
+                tempLoading.style.display = "block";
+                loading.style.display = "none";
+            }
 
             fetchData()
                 .then(data => {
                     const counts = displayChargers(data);
                     updateSummary(counts);
+                    const tempLoading = document.getElementById("temp-loading");
+                    if (tempLoading) {
+                        tempLoading.remove();
+                    }
                     loading.style.display = "none";
-                    summary.style.display = "flex";
-                    chargersBlocks.style.display = "flex";
-                    updateInfo.style.display = "block";
-                    updateInfo.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+                    if (isInitialLoad) {
+                        summary.style.display = "flex";
+                        chargersBlocks.style.display = "flex";
+                        updateInfo.style.display = "block";
+                        isInitialLoad = false;
+                    }
+                    updateInfo.textContent = `Updated: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
                 })
                 .catch(error => {
+                    const tempLoading = document.getElementById("temp-loading");
+                    if (tempLoading) {
+                        tempLoading.remove();
+                    }
                     loading.style.display = "none";
                     chargersBlocks.innerHTML = `<p class="error">Error: ${error.message}</p>`;
-                    chargersBlocks.style.display = "block";
+                    if (isInitialLoad) {
+                        chargersBlocks.style.display = "block";
+                    }
                     updateInfo.textContent = `Error: ${error.message}`;
-                    updateInfo.style.display = "block";
+                    if (isInitialLoad) {
+                        updateInfo.style.display = "block";
+                    }
                 });
         }
 
